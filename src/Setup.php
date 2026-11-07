@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace SyedGalib\PluginScaffoldCli;
+namespace Sovware\PluginScaffoldCli;
 
 use FilesystemIterator;
 use RecursiveDirectoryIterator;
@@ -165,7 +165,7 @@ final class Setup
 
         $composerPath = $directory . '/composer.json';
         $composer = json_decode((string) file_get_contents($composerPath), true, 512, JSON_THROW_ON_ERROR);
-        $composer['name'] = 'syedgalib/' . $domain;
+        $composer['name'] = 'sovware/' . $domain;
         unset($composer['autoload']['psr-4']['WPPluginScaffold\\']);
         $composer['autoload']['psr-4'][$namespace . '\\'] = '../includes/';
         $changes[$composerPath] = json_encode($composer, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n";

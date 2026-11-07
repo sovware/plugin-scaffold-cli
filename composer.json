@@ -1,5 +1,5 @@
 {
-    "name": "syedgalib/plugin-scaffold-cli",
+    "name": "sovware/plugin-scaffold-cli",
     "description": "Interactive setup command for WP Plugin Scaffold",
     "type": "library",
     "license": "MIT",
@@ -8,7 +8,7 @@
     },
     "autoload": {
         "psr-4": {
-            "SyedGalib\\PluginScaffoldCli\\": "src/"
+            "Sovware\\PluginScaffoldCli\\": "src/"
         }
     },
     "bin": ["bin/plugin-scaffold-setup"]

@@ -5,4 +5,4 @@ declare(strict_types=1);
 
 require __DIR__ . '/../src/Setup.php';
 
-exit(\SyedGalib\PluginScaffoldCli\Setup::run(getcwd()));
+exit(\Sovware\PluginScaffoldCli\Setup::run(getcwd()));
