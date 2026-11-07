@@ -6,6 +6,12 @@
     "require": {
         "php": "^7.4 || ^8.0"
     },
+    "authors": [
+        {
+            "name": "SovWare",
+            "homepage": "https://github.com/sovware"
+        }
+    ],
     "autoload": {
         "psr-4": {
             "Sovware\\PluginScaffoldCli\\": "src/"
