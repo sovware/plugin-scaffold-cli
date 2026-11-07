@@ -19,6 +19,9 @@ final class Setup
 
             $name = self::ask('Plugin Name');
             $description = self::ask('Plugin Description (optional)');
+            $pluginUri = self::ask('Plugin URI (optional, blank to keep existing)');
+            $author = self::ask('Author (optional, blank to keep existing)');
+            $authorUri = self::ask('Author URI (optional, blank to keep existing)');
             $domain = self::ask('Text Domain');
             $namespace = self::ask('PHP Namespace');
 
@@ -37,13 +40,16 @@ final class Setup
                 throw new RuntimeException('The target plugin file already exists: ' . $target);
             }
 
-            fwrite(STDOUT, "\nPlugin file: {$domain}.php\nPlugin name: {$name}\nDescription: {$description}\nText domain: {$domain}\nNamespace: {$namespace}\n");
+            $pluginUriPreview = $pluginUri === '' ? '(unchanged)' : $pluginUri;
+            $authorPreview = $author === '' ? '(unchanged)' : $author;
+            $authorUriPreview = $authorUri === '' ? '(unchanged)' : $authorUri;
+            fwrite(STDOUT, "\nPlugin file: {$domain}.php\nPlugin name: {$name}\nDescription: {$description}\nPlugin URI: {$pluginUriPreview}\nAuthor: {$authorPreview}\nAuthor URI: {$authorUriPreview}\nText domain: {$domain}\nNamespace: {$namespace}\n");
             if (strtolower(self::ask('Apply these changes? (y/N)')) !== 'y') {
                 fwrite(STDOUT, "No files changed.\n");
                 return 0;
             }
 
-            $changes = self::prepareChanges($directory, $source, $name, $description, $domain, $namespace);
+            $changes = self::prepareChanges($directory, $source, $name, $description, $pluginUri, $author, $authorUri, $domain, $namespace);
             self::writeChanges($changes, $source, $target);
             foreach (['composer update --lock --no-install --no-scripts --no-interaction', 'composer dump-autoload --no-scripts', 'composer humbug/php-scoper', 'composer add-prefix', 'composer permission'] as $command) {
                 fwrite(STDOUT, "\n> {$command}\n");
@@ -86,7 +92,7 @@ final class Setup
         return trim($answer);
     }
 
-    private static function prepareChanges(string $directory, string $source, string $name, string $description, string $domain, string $namespace): array
+    private static function prepareChanges(string $directory, string $source, string $name, string $description, string $pluginUri, string $author, string $authorUri, string $domain, string $namespace): array
     {
         $constants = strtoupper(str_replace('-', '_', $domain));
         $hooks = str_replace('-', '_', $domain);
@@ -94,6 +100,7 @@ final class Setup
             'WP_PLUGIN_SCAFFOLD' => $constants,
             'wp_plugin_scaffold' => $hooks,
             'WPPluginScaffold' => $namespace,
+            'WordPress Plugin Scaffold' => $name,
             'WP Plugin Scaffold' => $name,
             'WP plugin scaffold' => $name,
             'wp-plugin-scaffold' => $domain,
@@ -125,6 +132,21 @@ final class Setup
             $original = (string) file_get_contents($path);
             $lines = explode("\n", $original);
             foreach ($lines as &$line) {
+                if ($path === $source && preg_match('/^(\s*\*\s*)(Plugin URI|Author URI|Author):(\s*).*/', $line, $match)) {
+                    $values = [
+                        'Plugin URI' => $pluginUri,
+                        'Author' => $author,
+                        'Author URI' => $authorUri,
+                    ];
+                    if ($values[$match[2]] !== '') {
+                        $line = $match[1] . $match[2] . ':' . $match[3] . $values[$match[2]];
+                    }
+                    continue;
+                }
+                if ($path === $source && $author !== '' && preg_match('/^(\s*\*\s*@author\s+).*/', $line, $match)) {
+                    $line = $match[1] . $author;
+                    continue;
+                }
                 if (preg_match('/^\s*\*\s*(?:Plugin URI|Author URI):/', $line)) {
                     continue;
                 }
