@@ -50,7 +50,7 @@ final class Setup
 
             $changes = self::prepareChanges($directory, $name, $description, $domain, $namespace);
             self::writeChanges($changes, $source, $target);
-            foreach (['composer update --lock --no-install --no-scripts --no-interaction', 'composer dump-autoload --no-scripts', 'composer add-prefix', 'composer permission'] as $command) {
+            foreach (['composer update --lock --no-install --no-scripts --no-interaction', 'composer dump-autoload --no-scripts', 'composer humbug/php-scoper', 'composer add-prefix', 'composer permission'] as $command) {
                 fwrite(STDOUT, "\n> {$command}\n");
                 passthru($command, $status);
                 if ($status !== 0) {
