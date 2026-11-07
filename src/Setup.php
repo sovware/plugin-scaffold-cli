@@ -119,8 +119,9 @@ final class Setup
                     continue;
                 }
                 $line = str_replace(array_keys($replacements), array_values($replacements), $line);
-                if (basename($path) === self::SOURCE_FILE && preg_match('/^\s*\* Description:/', $line)) {
-                    $line = preg_replace('/^(\s*\* Description:\s*).*/', '$1' . str_replace('$', '\\$', $description), $line);
+                $line = str_replace('\\PluginScaffold\\Core\\Scaffold', '\\' . $namespace . '\\Core\\Scaffold', $line);
+                if (basename($path) === self::SOURCE_FILE && preg_match('/^(\s*\* Description:\s*).*/', $line, $match)) {
+                    $line = $match[1] . $description;
                 }
             }
             unset($line);
