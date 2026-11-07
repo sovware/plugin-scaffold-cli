@@ -12,15 +12,10 @@ use Throwable;
 
 final class Setup
 {
-    private const SOURCE_FILE = 'wp-plugin-scaffold.php';
-
     public static function run(string $directory): int
     {
         try {
-            $source = $directory . '/' . self::SOURCE_FILE;
-            if (!is_file($source) || strpos((string) file_get_contents($source), 'Plugin Name:       WP Plugin Scaffold') === false) {
-                throw new RuntimeException('Run this command once from an unpersonalized WP Plugin Scaffold directory.');
-            }
+            $source = self::findSourceFile($directory);
 
             $name = self::ask('Plugin Name');
             $description = self::ask('Plugin Description (optional)');
@@ -38,7 +33,7 @@ final class Setup
             }
 
             $target = $directory . '/' . $domain . '.php';
-            if (file_exists($target)) {
+            if ($target !== $source && file_exists($target)) {
                 throw new RuntimeException('The target plugin file already exists: ' . $target);
             }
 
@@ -48,7 +43,7 @@ final class Setup
                 return 0;
             }
 
-            $changes = self::prepareChanges($directory, $name, $description, $domain, $namespace);
+            $changes = self::prepareChanges($directory, $source, $name, $description, $domain, $namespace);
             self::writeChanges($changes, $source, $target);
             foreach (['composer update --lock --no-install --no-scripts --no-interaction', 'composer dump-autoload --no-scripts', 'composer humbug/php-scoper', 'composer add-prefix', 'composer permission'] as $command) {
                 fwrite(STDOUT, "\n> {$command}\n");
@@ -66,6 +61,21 @@ final class Setup
         }
     }
 
+    private static function findSourceFile(string $directory): string
+    {
+        $candidates = [];
+        foreach (glob($directory . '/*.php') ?: [] as $path) {
+            $header = file_get_contents($path, false, null, 0, 8192);
+            if ($header !== false && preg_match('/^[ \t]*\*[ \t]*Plugin Name:[ \t]*WP Plugin Scaffold[ \t]*$/m', $header)) {
+                $candidates[] = $path;
+            }
+        }
+        if (count($candidates) !== 1) {
+            throw new RuntimeException('Run this command once from an unpersonalized WP Plugin Scaffold directory with one main plugin file.');
+        }
+        return $candidates[0];
+    }
+
     private static function ask(string $label): string
     {
         fwrite(STDOUT, $label . ': ');
@@ -76,7 +86,7 @@ final class Setup
         return trim($answer);
     }
 
-    private static function prepareChanges(string $directory, string $name, string $description, string $domain, string $namespace): array
+    private static function prepareChanges(string $directory, string $source, string $name, string $description, string $domain, string $namespace): array
     {
         $constants = strtoupper(str_replace('-', '_', $domain));
         $hooks = str_replace('-', '_', $domain);
@@ -90,7 +100,7 @@ final class Setup
         ];
         $changes = [];
         $paths = [
-            $directory . '/wp-plugin-scaffold.php',
+            $source,
             $directory . '/readme.md',
             $directory . '/readme.txt',
         ];
@@ -120,7 +130,7 @@ final class Setup
                 }
                 $line = str_replace(array_keys($replacements), array_values($replacements), $line);
                 $line = str_replace('\\PluginScaffold\\Core\\Scaffold', '\\' . $namespace . '\\Core\\Scaffold', $line);
-                if (basename($path) === self::SOURCE_FILE && preg_match('/^(\s*\* Description:\s*).*/', $line, $match)) {
+                if ($path === $source && preg_match('/^(\s*\* Description:\s*).*/', $line, $match)) {
                     $line = $match[1] . $description;
                 }
             }
@@ -164,7 +174,7 @@ final class Setup
                 }
                 $written[] = $path;
             }
-            if (!rename($source, $target)) {
+            if ($source !== $target && !rename($source, $target)) {
                 throw new RuntimeException('Could not rename the plugin entry file.');
             }
         } catch (Throwable $error) {
