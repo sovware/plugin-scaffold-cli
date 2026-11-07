@@ -1,0 +1,8 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+require __DIR__ . '/../src/Setup.php';
+
+exit(\SyedGalib\PluginScaffoldCli\Setup::run(getcwd()));
